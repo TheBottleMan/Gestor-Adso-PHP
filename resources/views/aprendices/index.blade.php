@@ -1,67 +1,55 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+@extends('layouts.app')
 
-    <title>Listado de Aprendices</title>
+@section('title', 'Aprendices')
 
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            max-width: 1100px;
-            margin: 30px auto;
-            padding: 0 16px;
-            color: #222;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 20px;
-        }
-
-        th, td {
-            border: 1px solid #ddd;
-            padding: 10px;
-            text-align: left;
-        }
-
-        th {
-            background: #f2f2f2;
-        }
-
-        .success {
-            padding: 12px;
-            background: #e5f7e9;
-            margin: 15px 0;
-        }
-
-        .button {
-            display: inline-block;
-            padding: 10px 14px;
-            background: #e8eefc;
-            text-decoration: none;
-            color: #173f8a;
-            border-radius: 4px;
-        }
-    </style>
-</head>
-<body>
+@section('content')
 
     <h1>Listado de Aprendices</h1>
 
-    <a href="{{ route('aprendices.create') }}" class="button">
-        Registrar aprendiz
-    </a>
 
-    @if (session('ok'))
-        <div class="success">
-            {{ session('ok') }}
-        </div>
-    @endif
+    <div class="toolbar">
+
+        <a
+            class="button"
+            href="{{ route('aprendices.create') }}"
+        >
+            + Nuevo aprendiz
+        </a>
+
+
+        <form
+            class="search-form"
+            action="{{ route('aprendices.index') }}"
+            method="GET"
+        >
+
+            <input
+                type="text"
+                name="q"
+                value="{{ $q }}"
+                placeholder="Buscar por nombre o documento"
+            >
+
+            <button type="submit">
+                Buscar
+            </button>
+
+
+            @if ($q !== '')
+
+                <a href="{{ route('aprendices.index') }}">
+                    Limpiar
+                </a>
+
+            @endif
+
+        </form>
+
+    </div>
+
 
     <table>
+
         <thead>
             <tr>
                 <th>ID</th>
@@ -69,33 +57,89 @@
                 <th>Documento</th>
                 <th>Correo</th>
                 <th>Ficha</th>
+                <th>Acciones</th>
             </tr>
         </thead>
 
+
         <tbody>
+
             @forelse ($aprendices as $aprendiz)
+
                 <tr>
-                    <td>{{ $aprendiz->id }}</td>
-                    <td>{{ $aprendiz->nombre }}</td>
-                    <td>{{ $aprendiz->documento }}</td>
-                    <td>{{ $aprendiz->correo }}</td>
+
                     <td>
-                        {{ $aprendiz->ficha_id ?? 'Sin asignar' }}
+                        {{ $aprendiz->id }}
                     </td>
+
+                    <td>
+                        {{ $aprendiz->nombre }}
+                    </td>
+
+                    <td>
+                        {{ $aprendiz->documento }}
+                    </td>
+
+                    <td>
+                        {{ $aprendiz->correo }}
+                    </td>
+
+                    <td>
+                        {{ $aprendiz->ficha_id ?? 'Sin ficha' }}
+                    </td>
+
+
+                    <td class="actions">
+
+                        <a href="{{ route('aprendices.edit', $aprendiz) }}">
+                            Editar
+                        </a>
+
+
+                        <form
+                            action="{{ route('aprendices.destroy', $aprendiz) }}"
+                            method="POST"
+                            onsubmit="return confirm('¿Estás seguro de eliminar este aprendiz?')"
+                        >
+
+                            @csrf
+
+                            @method('DELETE')
+
+                            <button
+                                type="submit"
+                                class="danger-button"
+                            >
+                                Eliminar
+                            </button>
+
+                        </form>
+
+                    </td>
+
                 </tr>
+
             @empty
+
                 <tr>
-                    <td colspan="5">
-                        No hay aprendices registrados.
+
+                    <td colspan="6">
+                        No hay aprendices que coincidan con la búsqueda.
                     </td>
+
                 </tr>
+
             @endforelse
+
         </tbody>
+
     </table>
 
-    <div>
+
+    <div class="pagination">
+
         {{ $aprendices->links() }}
+
     </div>
 
-</body>
-</html>
+@endsection

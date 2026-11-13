@@ -2,82 +2,103 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\StoreUpdateAprendizRequest;
 use App\Models\Aprendiz;
 use Illuminate\Http\Request;
 
 class AprendizController extends Controller
 {
-    public function index()
+    // LISTAR Y BUSCAR APRENDICES
+    public function index(Request $request)
     {
-        $aprendices = Aprendiz::latest()->paginate(10);
+        // Obtenemos el texto de búsqueda.
+        $q = trim((string) $request->query('q', ''));
+
+        // Consultamos los aprendices.
+        $aprendices = Aprendiz::query()
+
+            // Aplicamos el filtro solamente si hay búsqueda.
+            ->when($q !== '', function ($query) use ($q) {
+
+                $query->where(function ($subquery) use ($q) {
+
+                    $subquery
+                        ->where('nombre', 'like', "%{$q}%")
+                        ->orWhere('documento', 'like', "%{$q}%");
+
+                });
+
+            })
+
+            // Ordenamos del más reciente al más antiguo.
+            ->latest()
+
+            // Mostramos diez registros por página.
+            ->paginate(10)
+
+            // Conservamos los parámetros de búsqueda.
+            ->withQueryString();
 
         return view(
             'aprendices.index',
-            compact('aprendices')
+            compact('aprendices', 'q')
         );
     }
 
+
+    // MOSTRAR FORMULARIO DE CREACIÓN
     public function create()
     {
-        return view('aprendices.create');
+        $aprendiz = new Aprendiz();
+
+        return view(
+            'aprendices.create',
+            compact('aprendiz')
+        );
     }
 
-    public function store(Request $request)
+
+    // GUARDAR NUEVO APRENDIZ
+    public function store(StoreUpdateAprendizRequest $request)
     {
-        $data = $request->validate([
-            'nombre' => [
-                'required',
-                'string',
-                'max:120',
-            ],
-
-            'documento' => [
-                'required',
-                'string',
-                'max:40',
-                'unique:aprendices,documento',
-            ],
-
-            'correo' => [
-                'required',
-                'string',
-                'email',
-                'max:120',
-                'unique:aprendices,correo',
-            ],
-
-            'ficha_id' => [
-                'nullable',
-                'integer',
-            ],
-        ]);
-
-        Aprendiz::create($data);
+        Aprendiz::create($request->validated());
 
         return redirect()
             ->route('aprendices.index')
             ->with('ok', 'Aprendiz creado correctamente.');
     }
 
-    public function show(Aprendiz $aprendiz)
-    {
-        abort(404);
-    }
 
+    // MOSTRAR FORMULARIO DE EDICIÓN
     public function edit(Aprendiz $aprendiz)
     {
-        abort(404);
+        return view(
+            'aprendices.edit',
+            compact('aprendiz')
+        );
     }
 
+
+    // ACTUALIZAR APRENDIZ
     public function update(
-        Request $request,
+        StoreUpdateAprendizRequest $request,
         Aprendiz $aprendiz
     ) {
-        abort(404);
+        $aprendiz->update($request->validated());
+
+        return redirect()
+            ->route('aprendices.index')
+            ->with('ok', 'Aprendiz actualizado correctamente.');
     }
 
+
+    // ELIMINAR APRENDIZ
     public function destroy(Aprendiz $aprendiz)
     {
-        abort(404);
+        $aprendiz->delete();
+
+        return redirect()
+            ->route('aprendices.index')
+            ->with('ok', 'Aprendiz eliminado correctamente.');
     }
 }
